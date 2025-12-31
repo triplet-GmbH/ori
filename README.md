@@ -3,3 +3,6 @@ Ori bedeutet wörtlich „Kopf“, gemeint ist aber nicht der physische Kopf, so
 
 das innere, spirituelle Selbst
 der Sitz von Schicksal, Persönlichkeit, Bewusstsein und Lebensweg
+
+    docker compose -f devops/mongodb.yml up -d
+    docker compose -f devops/mongodb.yml down
