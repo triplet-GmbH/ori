@@ -6,3 +6,11 @@ der Sitz von Schicksal, Persönlichkeit, Bewusstsein und Lebensweg
 
     docker compose -f devops/mongodb.yml up -d
     docker compose -f devops/mongodb.yml down
+
+
+Todo:
+
+- character values completion
+- characters editable
+- generate character
+- auth
