@@ -14,3 +14,5 @@ Todo:
 - characters editable
 - generate character
 - auth
+- deployment
+
