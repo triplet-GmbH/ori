@@ -34,6 +34,7 @@ jobs:
     needs: docker_image
 
     steps:
+    - uses: actions/checkout@v4
     - name: "install ansible"
       run: |
         sudo apt update
@@ -44,11 +45,6 @@ jobs:
         umask 0077
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-        cat ~/.ssh/known_hosts
-        ssh root@ori.triplet.gmbh 'echo "check"'
-
     - name: Deploy via Ansible
       run: ansible-playbook playbooks/docker.yml
-      working-directory: ./devops/ansible
-
-
+      working-directory: devops/ansible
