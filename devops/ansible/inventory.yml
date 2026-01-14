@@ -1,0 +1,5 @@
+all:
+  hosts:
+    main:
+      ansible_host: 178.63.174.36
+      ansible_user: root

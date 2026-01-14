@@ -1,0 +1,23 @@
+- name: Ensure Docker runs correct images
+  hosts: main
+  become: true
+  tasks:
+
+    # - name: "Login to local repo"
+    #   shell:
+    #     cmd: "echo '' | docker login docker.ori.triplet.gmbh -u 'registry' --password-stdin"
+
+    - name: "Create Compose File"
+      copy:
+        dest: /root/docker-compose.yaml
+        src: ../../docker-compose.yaml
+
+    # - name: "Create Env File"
+    #   copy:
+    #     dest: /root/docker-compose.env
+    #     src: ../../docker-compose.env
+
+    - name: "Update Docker Compose"
+      shell:
+        chdir: /root
+        cmd: ". /root/docker-compose.env && docker compose up --detach --remove-orphans"
