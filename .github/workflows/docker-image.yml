@@ -28,7 +28,7 @@ jobs:
       run: docker push $IMAGENAME
 
   deploy:
-    if: startsWith(github.ref, 'prod-')
+    if: startsWith(github.ref_name, 'prod-')
     name: "Deploy to Server"
     runs-on: ubuntu-latest
     needs: docker_image
