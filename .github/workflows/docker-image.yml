@@ -27,14 +27,21 @@ jobs:
     - name: Push the Docker image
       run: docker push $IMAGENAME
 
-  # deploy:
-  #   if: startsWith(github.ref, 'prod-')
-  #   name: "Deploy to Server"
-  #   runs-on: ubuntu-latest
-  #   needs: docker_image
+  deploy:
+    if: startsWith(github.ref, 'prod-')
+    name: "Deploy to Server"
+    runs-on: ubuntu-latest
+    needs: docker_image
 
-  #   steps:
-  #   - name: Deploy via Ansible
-  #     run: ans
+    steps:
+    - name: "install ansible"
+      run: |
+        apt update
+        apt install software-properties-common
+        add-apt-repository --yes --update ppa:ansible/ansible
+        apt install ansible
+
+    - name: Deploy via Ansible
+      run: ansible-playbook --version
 
 
