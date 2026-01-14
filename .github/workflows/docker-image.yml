@@ -40,8 +40,8 @@ jobs:
         sudo apt install software-properties-common
         sudo add-apt-repository --yes --update ppa:ansible/ansible
         sudo apt install ansible openssh-client
-        echo umask 0077
         mkdir -p ~/.ssh
+        umask 0077
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
         cat ~/.ssh/known_hosts
