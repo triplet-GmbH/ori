@@ -1,4 +1,5 @@
 from nicegui import ui
+from fastapi import Request
 
 from .view.charlist import render as render_charlist
 from .view.chardetail import render as render_chardetail
@@ -23,10 +24,10 @@ def charlist(page: int = 1):
 
 
 @ui.page('/char/{identifier}/', dark=True)
-def char_detail(identifier: str):
+async def char_detail(identifier: str, request: Request):
     char = Char.fetch_by_id(identifier)
 
     if char:
-        render_chardetail(char)
+        await render_chardetail(char)
     else:
         ui.notify(f"Character {identifier} not found")

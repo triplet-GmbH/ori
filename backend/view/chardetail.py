@@ -1,10 +1,142 @@
 from nicegui import ui
 
 from .header import render as header
-from ..model.char import Char
+from ..model.char import Char, Activity
 
 
-def render(char: Char):
+def _submit(charState: dict, char: Char):
+    char.name = charState["name"].value
+    char.classname = charState["classname"].value
+    char.level = charState["level"].value
+
+    for name, item in charState["attributes"].items():
+        setattr(char.attributes, name, item.value)
+
+    for name, item in charState["current"].items():
+        setattr(char.current, name, item.value)
+
+    for name in ["skills", "spells"]:
+        setattr(char, name, [
+            Activity(
+                **{k: v.value for k, v in item.items() if not k.startswith("__")}
+            ) for item in charState[name] if item["name"].value
+        ])
+    
+    char.inventory = [
+        item.value for item in charState["inventory"] if item.value
+    ]
+            
+    updated = Char.update(char)
+    ui.notify(f"Update {"succeded" if updated else "failed"}", type="positive" if updated else "negative")
+    ui.run_javascript('setTimeout(() => window.location.reload(), 1000)')
+
+
+def _common(charState: dict, char: Char):
+    with ui.row().classes("w-full mb-6"):
+        ui.label("Common Info").classes("text-xl")        
+        with ui.grid(columns="auto 1fr").classes("w-full"):
+            ui.label("Name:").classes("self-center font-medium w-full mr-3")
+            charState["name"] = ui.input(value=char.name).classes("w-full")
+            ui.label("Class:").classes("self-center font-medium w-full mr-3")
+            charState["classname"] = ui.input(value=char.classname).classes("w-full")
+            ui.label("Level:").classes("self-center font-medium w-full mr-3")
+            charState["level"] = ui.input(value=char.level).classes("w-full")
+
+
+def _tab_panel(panel_names: list[str]):
+    panels = []
+    with ui.tabs().classes("w-full") as tabs:
+        for index, name in enumerate(panel_names):
+            tab = ui.tab(name)
+            tab.on("click", lambda e, index=index: ui.run_javascript(f"window.location.hash = '{index}';"))
+            panels.append(
+                tab
+            )
+    return tabs, panels
+
+
+def _panel_attributes(panel: ui.tab, charState: dict, char: Char, attributes: tuple[str]):
+    with ui.tab_panel(panel).classes("w-full"):
+        with ui.row().classes("w-full"):
+            with ui.column().classes("flex-1 mr-10"):
+                ui.label("Attributes").classes("text-xl")        
+                with ui.grid(columns="auto 1fr").classes("w-full"):
+                    for key, value in attributes:
+                        ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
+                        charState["attributes"][key] = ui.input(value=getattr(char.attributes, key)).classes("w-full")
+
+            with ui.column().classes("flex-1"):
+                for name, label, maxvalue in [
+                    ("hitpoints", "Hitpoints", char.attributes.constitution * char.level),
+                    ("manapoints", "Manapoints", char.attributes.intelligence * char.level),
+                ]:
+                    ui.label(label).classes("text-xl")
+                    with ui.grid(columns="auto 1fr").classes("w-full"):
+                        ui.label("Maximum:").classes("self-center font-medium w-full mr-3")
+                        ui.label(maxvalue).classes("self-center font-medium w-full")
+                        ui.label("Current:").classes("self-center font-medium w-full mr-3")
+                        charState["current"][name] = ui.input(value=getattr(char.current, name)).classes("w-full")
+
+                ui.label("Buffs / Debuffs").classes("text-xl")
+                with ui.grid(columns="auto 1fr").classes("w-full"):
+                    for num in range(1, 5):
+                        ui.label(f"{num}:").classes("self-center font-medium w-full mr-3")
+                        charState["current"][f"buff_{num}"] = ui.input(value=getattr(char.current, f"buff_{num}")).classes("w-full")
+
+
+def _panel_skills(panel: ui.tab, charState: dict, char: Char, attributes: tuple[str]):
+    with ui.tab_panel(panel).classes("w-full"):
+        for name, label in [
+            ("skills", "Skills"),
+            ("spells", "Spells"),
+        ]:
+            ui.label(label).classes("text-xl")
+            with ui.row().classes("w-full mb-6"):
+                with ui.grid(columns="6fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
+                    for activity in getattr(char, name):
+                        charState[name].append({
+                            "name": ui.input(value=activity.name),
+                            "power_attribute": ui.select(dict([("", "")] + attributes), value=activity.power_attribute),
+                            "control_attribute": ui.select(dict([("", "")] + attributes), value=activity.control_attribute),
+                            "__1": ui.label(f"{getattr(char.attributes, activity.power_attribute, 0)}").classes("self-center"),
+                            "__2": ui.label(f"{getattr(char.attributes, activity.control_attribute, 0)}").classes("self-center"),
+                            "level": ui.input(value=activity.level)
+                        })
+                    
+                    charState[name].append({
+                        "name": ui.input(value="", placeholder="[New Skill]"),
+                        "power_attribute": ui.select(dict([("", "")] + attributes), value=""),
+                        "control_attribute": ui.select(dict([("", "")] + attributes), value=""),
+                        "__1": ui.label("0").classes("self-center"),
+                        "__2": ui.label("0").classes("self-center"),
+                        "level": ui.input(value=1),
+                    })
+
+
+def _panel_inventory(panel: ui.tab, charState: dict, char: Char):
+        with ui.tab_panel(panel).classes("w-full"):
+            ui.label("Inventory").classes("text-xl")
+
+            with ui.grid(columns="1fr 1fr").classes("w-full"):
+                for item in char.inventory:
+                    charState["inventory"].append(
+                        ui.input(value=item)
+                    )
+
+                charState["inventory"].append(
+                    ui.input(value="", placeholder="[New Item]")
+                )
+
+
+async def render(char: Char):
+    charState = {
+        "attributes": {},
+        "current": {},
+        "skills": [],
+        "spells": [],
+        "inventory": [],
+    }
+
     attributes = [
         ("strength", "Strength"),
         ("agility", "Agility"),
@@ -16,108 +148,22 @@ def render(char: Char):
         ("luck", "Luck"),
     ]
 
-    header(f"detail of {char.name}")
+    with ui.header():
+        ui.button("save", on_click=lambda : _submit(charState, char), color="secondary")
+        ui.button("exit", on_click=lambda : ui.navigate.to("/"))
 
-    with ui.row().classes("w-full mb-6"):
-        ui.label("Common Info").classes("text-xl")        
-        with ui.grid(columns="auto 1fr").classes("w-full"):
-            ui.label("Name:").classes("self-center font-medium w-full mr-3")
-            ui.input(value=char.name).classes("w-full")
-            ui.label("Class:").classes("self-center font-medium w-full mr-3")
-            ui.input(value=char.classname).classes("w-full")
-            ui.label("Level:").classes("self-center font-medium w-full mr-3")
-            ui.input(value=char.level).classes("w-full")
+    _common(charState, char)
 
-    with ui.tabs().classes("w-full") as tabs:
-        tab_attributes = ui.tab("Attributes & State")
-        tab_skills = ui.tab("Skills & Spells")
-        tab_inventory = ui.tab("Inventory")
+    tabs, panels = _tab_panel([
+        "Attributes & State",
+        "Skills & Spells",
+        "Inventory",
+    ])
+    #anchor = int(ui.run_javascript('return window.location.hash.substring(1);', ) or "0")
+    with ui.tab_panels(tabs).classes("w-full"):
+        _panel_attributes(panels[0], charState, char, attributes)
+        _panel_skills(panels[1], charState, char, attributes)
+        _panel_inventory(panels[2], charState, char)
 
-    with ui.tab_panels(tabs, value=tab_attributes).classes("w-full"):
-        with ui.tab_panel(tab_attributes).classes("w-full"):
-            with ui.row().classes("w-full"):
-                with ui.column().classes("flex-1 mr-10"):
-                    ui.label("Attributes").classes("text-xl")        
-                    with ui.grid(columns="auto 1fr").classes("w-full"):
-                        for key, value in attributes:
-                            ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
-                            ui.input(value=getattr(char.attributes, key)).classes("w-full")
-
-                with ui.column().classes("flex-1"):
-                    ui.label("Hitpoints").classes("text-xl")
-                    with ui.grid(columns="auto 1fr").classes("w-full"):
-                        ui.label("Maximum:").classes("self-center font-medium w-full mr-3")
-                        ui.label(char.attributes.constitution * char.level).classes("self-center font-medium w-full")
-                        ui.label("Current:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value=0).classes("w-full")
-
-                    ui.label("Manapoints").classes("text-xl")
-                    with ui.grid(columns="auto 1fr").classes("w-full"):
-                        ui.label("Maximum:").classes("self-center font-medium w-full mr-3")
-                        ui.label(char.attributes.intelligence * char.level).classes("self-center font-medium w-full")
-                        ui.label("Current:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value=0).classes("w-full")
-
-                    ui.label("Buffs / Debuffs").classes("text-xl")
-                    with ui.grid(columns="auto 1fr").classes("w-full"):
-                        ui.label("1st:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value="").classes("w-full")
-                        ui.label("2nd:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value="").classes("w-full")
-                        ui.label("3rd:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value="").classes("w-full")
-                        ui.label("4th:").classes("self-center font-medium w-full mr-3")
-                        ui.input(value="").classes("w-full")
-
-        with ui.tab_panel(tab_skills).classes("w-full"):
-            ui.label("Skills").classes("text-xl")
-
-            with ui.row().classes("w-full mb-6"):
-                with ui.grid(columns="6fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
-                    for activity in char.skills:
-                        ui.input(value=activity.name)
-                        a1 = ui.select(dict([("", "")] + attributes), value=activity.power_attribute)
-                        a2 = ui.select(dict([("", "")] + attributes), value=activity.control_attribute)
-                        ui.label(f"{getattr(char.attributes, activity.power_attribute, 0)}").classes("self-center")
-                        ui.label(f"{getattr(char.attributes, activity.control_attribute, 0)}").classes("self-center")
-                        ui.input(value=activity.level)
-                    
-                    ui.input(value="", placeholder="[New Skill]")
-                    ui.select(dict([("", "")] + attributes), value="")
-                    ui.select(dict([("", "")] + attributes), value="")
-                    ui.label("0").classes("self-center")
-                    ui.label("0").classes("self-center")
-                    ui.input(value=1)
-
-            with ui.row().classes("w-full mb-6"):
-                ui.label("Spells").classes("text-xl")
-
-                with ui.grid(columns="6fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
-                    for activity in char.spells:
-                        ui.input(value=activity.name)
-                        a1 = ui.select(dict([("", "")] + attributes), value=activity.power_attribute)
-                        a2 = ui.select(dict([("", "")] + attributes), value=activity.control_attribute)
-                        ui.label(f"{getattr(char.attributes, activity.power_attribute, 0)}").classes("self-center")
-                        ui.label(f"{getattr(char.attributes, activity.control_attribute, 0)}").classes("self-center")
-                        ui.input(value=activity.level)
-                    
-                    ui.input(value="", placeholder="[New Spell]")
-                    ui.select(dict([("", "")] + attributes), value="")
-                    ui.select(dict([("", "")] + attributes), value="")
-                    ui.label("0").classes("self-center")
-                    ui.label("0").classes("self-center")
-                    ui.input(value=1)
-
-        with ui.tab_panel(tab_inventory).classes("w-full"):
-            ui.label("Inventory").classes("text-xl")
-
-            with ui.grid(columns="1fr 1fr").classes("w-full"):
-                for item in char.inventory:
-                    ui.input(value=item)
-                ui.input(value="", placeholder="[New Item]")
-
-
-    with ui.footer().classes("w-full flex justify-center items-center p-4 bg-stone-800 gap-4"):
-        ui.button("save")
-        ui.button("reset")
-        ui.button("exit")
+    hash_value = int(await ui.run_javascript('console.log("Hallo"); return window.location.hash.substring(1);') or "0")
+    tabs.value = panels[hash_value]

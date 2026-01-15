@@ -83,13 +83,12 @@ class Char(BaseModel):
 
 
     @classmethod
-    def update(cls, char: "Char") -> "Char":
-        return Char.from_mongo(
-            CurrentDB.char.update_one(
-                {"_id": char.id},
-                char.to_mongo()
-            )
+    def update(cls, char: "Char") -> bool:
+        result = CurrentDB.char.replace_one(
+            {"_id": char.id},
+            char.to_mongo()
         )
+        return result.modified_count == 1
 
 
 class CharList(BaseModel):
