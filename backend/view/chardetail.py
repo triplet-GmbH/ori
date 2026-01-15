@@ -5,30 +5,43 @@ from ..model.char import Char, Activity
 
 
 def _submit(charState: dict, char: Char):
-    char.name = charState["name"].value
-    char.classname = charState["classname"].value
-    char.level = charState["level"].value
+    try:
+        char.name = charState["name"].value
+        char.classname = charState["classname"].value
+        char.level = int(charState["level"].value)
 
-    for name, item in charState["attributes"].items():
-        setattr(char.attributes, name, item.value)
+        for name, item in charState["attributes"].items():
+            setattr(char.attributes, name, int(item.value))
 
-    for name, item in charState["current"].items():
-        setattr(char.current, name, item.value)
+        for name, item in charState["current"].items():
+            if name in ["hitpoints", "manapoints"]:
+                func = int
+            else:
+                func = lambda v: v
 
-    for name in ["skills", "spells"]:
-        setattr(char, name, [
-            Activity(
-                **{k: v.value for k, v in item.items() if not k.startswith("__")}
-            ) for item in charState[name] if item["name"].value
-        ])
-    
-    char.inventory = [
-        item.value for item in charState["inventory"] if item.value
-    ]
-            
+            setattr(char.current, name, func(item.value))
+
+        func = lambda k, v: int(v) if k == "level" else v
+        for name in ["skills", "spells"]:
+            setattr(char, name, [
+                Activity(
+                    **{k: func(k, v.value) for k, v in item.items() if not k.startswith("__")}
+                ) for item in charState[name] if item["name"].value
+            ])
+        
+        char.inventory = [
+            item.value for item in charState["inventory"] if item.value
+        ]
+    except ValueError:
+        ui.notify("Validation failed", type="negative")
+        return
+
     updated = Char.update(char)
-    ui.notify(f"Update {"succeded" if updated else "failed"}", type="positive" if updated else "negative")
-    ui.run_javascript('setTimeout(() => window.location.reload(), 1000)')
+    if updated:
+        ui.notify("Update succeded", type="positive")
+        ui.run_javascript('setTimeout(() => window.location.reload(), 1000)')
+    else:
+        ui.notify("nothing to update", type="info")
 
 
 def _common(charState: dict, char: Char):
@@ -63,7 +76,9 @@ def _panel_attributes(panel: ui.tab, charState: dict, char: Char, attributes: tu
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for key, value in attributes:
                         ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
-                        charState["attributes"][key] = ui.input(value=getattr(char.attributes, key)).classes("w-full")
+                        charState["attributes"][key] = ui.input(
+                            value=getattr(char.attributes, key)
+                        ).classes("w-full")
 
             with ui.column().classes("flex-1"):
                 for name, label, maxvalue in [
@@ -149,7 +164,7 @@ async def render(char: Char):
     ]
 
     with ui.header():
-        ui.button("save", on_click=lambda : _submit(charState, char), color="secondary")
+        ui.button("save", on_click=lambda e, charState=charState, char=char: _submit(charState, char), color="secondary")
         ui.button("exit", on_click=lambda : ui.navigate.to("/"))
 
     _common(charState, char)
