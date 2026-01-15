@@ -6,12 +6,47 @@ from pydantic import BaseModel, Field
 from . import CurrentDB, PyObjectId
 
 
+class Attributes(BaseModel):
+    strength: int = 0
+    agility: int = 0
+    constitution: int = 0
+    perception: int = 0
+    intelligence: int = 0
+    willpower: int = 0
+    charisma: int = 0
+    luck: int = 0
+
+
+class Current(BaseModel):
+    hitpoints: int = 0
+    manapoints: int = 0
+    buff_1: str = ""
+    buff_2: str = ""
+    buff_3: str = ""
+    buff_4: str = ""
+
+
+class Activity(BaseModel):
+    name: str = ""
+    power_attribute: str = ""
+    control_attribute: str = ""
+    level: int = 0
+
+
 class Char(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     name: str
-    classname: str
-    level: int
-    attributes: dict[str, int]
+    classname: str = ""
+    titles: str = ""
+
+    level: int = 1
+
+    attributes: Attributes = Attributes()
+    current: Current = Current()
+
+    skills: list[Activity] = []
+    spells: list[Activity] = []
+    inventory: list[str] = []
 
     model_config = {
         "populate_by_name": True,
@@ -84,6 +119,13 @@ def generate_char() -> Char:
         name=f"{choice(names)} {choice(names)} {choice(names)}",
         classname=choice(classnames),
         level=randint(1, 100),
-        attributes={k: randint(2, 6) + randint(2, 6) + randint(2, 6) for k in attributes}
+        attributes=Attributes(
+            **{k: randint(2, 6) + randint(2, 6) + randint(2, 6) for k in attributes}
+        )
     )
+    char.current = Current(
+        hitpoints=char.attributes.constitution * char.level,
+        manapoints=char.attributes.intelligence * char.level,
+    )
+
     return Char.insert(char)
