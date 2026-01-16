@@ -1,6 +1,10 @@
 - name: Ensure Docker runs correct images
   hosts: main
   become: true
+
+  environment:
+    ORI_VERSION: "{{ lookup('env','ORI_VERSION') }}"
+
   tasks:
 
     - name: "Login to local repo"
@@ -16,5 +20,3 @@
       shell:
         chdir: /root
         cmd: ". /root/docker-compose.env && docker compose up --detach --remove-orphans"
-        environment:
-          ORI_VERSION: "{{ lookup('env','ORI_VERSION') }}"
