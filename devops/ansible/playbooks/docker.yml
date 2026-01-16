@@ -20,3 +20,7 @@
       shell:
         chdir: /root
         cmd: ". /root/docker-compose.env && docker compose up --detach --remove-orphans"
+
+    - name: "Prune"
+      shell:
+        cmd: "docker image prune --all -f"
