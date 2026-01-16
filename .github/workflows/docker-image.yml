@@ -33,6 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker_image
 
+    env:
+      ORI_VERSION: ${{ github.ref_name }}
+
     steps:
     - uses: actions/checkout@v4
     - name: "install ansible"

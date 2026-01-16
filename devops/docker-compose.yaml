@@ -26,7 +26,7 @@ services:
 
   # the actual application
   ori:
-    image: docker.ori.triplet.gmbh/ori
+    image: docker.ori.triplet.gmbh/ori:${ORI_VERSION}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hello.rule=Host(`ori.triplet.gmbh`)"
