@@ -51,6 +51,6 @@ async def char_detail(identifier: str):
         ui.notify(f"Character {identifier} not found")
 
 
-@ui.page('/login')
+@ui.page('/login', dark=True)
 def login(redirect_to: str = '/') -> Optional[RedirectResponse]:
     render_login(redirect_to)
