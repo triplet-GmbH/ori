@@ -53,4 +53,4 @@ async def char_detail(identifier: str):
 
 @ui.page('/login')
 def login(redirect_to: str = '/') -> Optional[RedirectResponse]:
-    render_login()
+    render_login(redirect_to)
