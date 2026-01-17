@@ -84,6 +84,12 @@ class Char(BaseModel):
 
     @classmethod
     def update(cls, char: "Char") -> bool:
+        char = Char(**{
+            **char.dict(),
+            "skills": [x for x in char.skills if x.name != ""],
+            "spells": [x for x in char.spells if x.name != ""],
+            "inventory": [x for x in char.inventory if x != ""],
+        })
         result = CurrentDB.char.replace_one(
             {"_id": char.id},
             char.to_mongo()
