@@ -11,16 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGENAME: docker.ori.triplet.gmbh/ori:${{ github.ref_name }}
-      BUILD_NAME: ${{ vars.GITHUB_REF_NAME }}
-      BUILD_HASH: ${{ vars.GITHUB_SHA }}
+      VERSION: ${{ github.ref_name }}
+      DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
     steps:
     - uses: actions/checkout@v4
 
     - name: Log in to the Docker registry
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login docker.ori.triplet.gmbh -u "${{ vars.DOCKER_USERNAME }}" --password-stdin
+      run: echo "$DOCKER_PASSWORD" | docker login docker.ori.triplet.gmbh -u "$DOCKER_USERNAME" --password-stdin
 
     - name: Build the Docker image
-      run: docker build --tag $IMAGENAME --build-arg=VERSION=${{ vars.GITHUB_REF_NAME }} --file Dockerfile .
+      run: docker build --tag "$IMAGENAME" --build-arg=VERSION="$VERSION" --file Dockerfile .
 
     - name: Push the Docker image
       run: docker push $IMAGENAME
