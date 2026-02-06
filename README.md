@@ -17,3 +17,12 @@ der Sitz von Schicksal, Persönlichkeit, Bewusstsein und Lebensweg
 - Form Submit instead of current fuckup
 
 
+
+
+# Devops
+
+Das Deployment ist via ansible und docker-compose realisiert.
+
+## Manuell
+
+    uvx --from ansible-core ansible-playbook playbooks/docker.yml

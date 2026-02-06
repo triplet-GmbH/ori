@@ -1,5 +1,7 @@
 FROM ghcr.io/astral-sh/uv:debian-slim
 
+ARG VERSION=dev
+
 ENTRYPOINT [ "uv", "run", "webserver.py" ]
 
 WORKDIR /app
@@ -14,4 +16,4 @@ COPY main.py /app/
 COPY webserver.py /app/
 COPY backend /app/backend
 
-
+RUN echo "version = '${VERSION}'" > /app/backend/buildinfo.py

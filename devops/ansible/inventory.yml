@@ -1,5 +1,0 @@
-all:
-  hosts:
-    main:
-      ansible_host: ori.triplet.gmbh
-      ansible_user: root
