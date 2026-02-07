@@ -48,6 +48,8 @@ class Char(BaseModel):
     spells: list[Activity] = []
     inventory: list[str] = []
 
+    deleted: bool = False
+
     model_config = {
         "populate_by_name": True,
         "arbitrary_types_allowed": True
@@ -62,16 +64,17 @@ class Char(BaseModel):
 
     @classmethod
     def count(cls):
-        return CurrentDB.char.count_documents({})
+        return CurrentDB.char.count_documents({"deleted": False})
 
     @classmethod
-    def fetch_by_id(cls, id: str) -> "Char":
+    def fetch_by_id(cls, id: str) -> Optional["Char"]:
         char = CurrentDB.char.find_one({
-            "_id": PyObjectId(id)
+            "_id": PyObjectId(id),
+            "deleted": False,
         })
         if not char:
             return None
-        
+
         return Char.from_mongo(char)
 
     @classmethod
@@ -105,12 +108,12 @@ class CharList(BaseModel):
         return CharList(
             items=[
                 Char.from_mongo(char)
-                for char in CurrentDB.char.find()
+                for char in CurrentDB.char.find({"deleted": False})
                                           .skip(page * page_size)
                                           .limit(page_size)
             ]
         )
- 
+
 
 def generate_char() -> Char:
     attributes = [

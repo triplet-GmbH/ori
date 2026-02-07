@@ -1,3 +1,6 @@
+from argparse import Action
+from ast import Call
+from typing import Any, Awaitable, Callable
 from pydantic import ValidationError
 from nicegui import ui
 
@@ -14,9 +17,16 @@ def _submit(char: Char):
         ui.notify("Validation Error", type="negative")
 
 
+def _delete(char: Char):
+    char.deleted = True
+    Char.update(char)
+    ui.navigate.to("/")
+    ui.notify("Character deleted", type="positive")
+
+
 def _common(char: Char):
     with ui.row().classes("w-full mb-6"):
-        ui.label("Common Info").classes("text-xl")        
+        ui.label("Common Info").classes("text-xl")
         with ui.grid(columns="auto 1fr").classes("w-full"):
             ui.label("Name:").classes("self-center font-medium w-full mr-3")
             ui.input(**binding(char, "name")).classes("w-full")
@@ -42,7 +52,7 @@ def _panel_attributes(panel: ui.tab, char: Char, attributes: tuple[str]):
     with ui.tab_panel(panel).classes("w-full"):
         with ui.row().classes("w-full"):
             with ui.column().classes("flex-1 mr-10"):
-                ui.label("Attributes").classes("text-xl")        
+                ui.label("Attributes").classes("text-xl")
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for key, value in attributes:
                         ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
@@ -94,6 +104,21 @@ def _panel_inventory(panel: ui.tab, char: Char):
                     ui.input(placeholder="" if char.inventory[index] else "[New Item]", **binding(char.inventory, index))
 
 
+def _confirm_dialog(label: str, verb: str):
+    with ui.dialog() as dialog, ui.card():
+        ui.label(label)
+        with ui.row().classes("justify-end w-full"):
+            ui.button(verb, on_click=lambda: dialog.submit(True), color="negative")
+            ui.button('Cancel', on_click=lambda: dialog.submit(False))
+
+    def confirmation(action: Callable[[], Any]):
+        async def _handle_dialog() -> None:
+            if await dialog:
+                action()
+        return _handle_dialog
+    return confirmation
+
+
 async def render(char: Char):
     attributes = [
         ("strength", "Strength"),
@@ -109,9 +134,14 @@ async def render(char: Char):
     char.spells.append(Activity(name="", power_attribute="", control_attribute="", level=1))
     char.inventory.append("")
 
+    confirm = _confirm_dialog("Are you sure you want to delete this character?", "Delete")
+
     with ui.header():
-        ui.button("save", on_click=lambda e, char=char: _submit(char), color="secondary")
-        ui.button("exit", on_click=lambda : ui.navigate.to("/"))
+        with ui.row().classes("flex-1"):
+            ui.button("save", on_click=lambda e, char=char: _submit(char), color="secondary")
+            ui.button("exit", on_click=lambda : ui.navigate.to("/"))
+
+        ui.button("delete character", on_click=confirm(lambda: _delete(char)), color="negative")
 
     _common(char)
 

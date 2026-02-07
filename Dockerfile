@@ -5,7 +5,10 @@ ARG VERSION=dev
 ENTRYPOINT [ "uv", "run", "webserver.py" ]
 
 WORKDIR /app
-EXPOSE 80
+EXPOSE 8023
+
+ENV RUN_MIGRATIONS=true
+ENV AUTO_RELOAD=false
 
 RUN uv python install 3.14
 
