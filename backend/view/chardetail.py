@@ -1,11 +1,11 @@
-from argparse import Action
-from ast import Call
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable
 from pydantic import ValidationError
 from nicegui import ui
 
 from ..model.char import Char, Activity
+
 from . import binding
+from . import uix
 
 
 def _submit(char: Char):
@@ -56,7 +56,7 @@ def _panel_attributes(panel: ui.tab, char: Char, attributes: tuple[str]):
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for key, value in attributes:
                         ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
-                        ui.input(**binding(char.attributes, key)).classes("w-full")
+                        uix.input(**binding(char.attributes, key)).classes("w-full")
 
             with ui.column().classes("flex-1"):
                 for name, label, maxvalue in [
@@ -68,13 +68,13 @@ def _panel_attributes(panel: ui.tab, char: Char, attributes: tuple[str]):
                         ui.label("Maximum:").classes("self-center font-medium w-full mr-3")
                         ui.label(maxvalue).classes("self-center font-medium w-full")
                         ui.label("Current:").classes("self-center font-medium w-full mr-3")
-                        ui.input(**binding(char.current, name)).classes("w-full")
+                        uix.input(**binding(char.current, name)).classes("w-full")
 
                 ui.label("Buffs / Debuffs").classes("text-xl")
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for num in range(1, 5):
                         ui.label(f"{num}:").classes("self-center font-medium w-full mr-3")
-                        ui.input(**binding(char.current, f"buff_{num}")).classes("w-full")
+                        uix.input(**binding(char.current, f"buff_{num}")).classes("w-full")
 
 
 def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
@@ -101,7 +101,7 @@ def _panel_inventory(panel: ui.tab, char: Char):
 
             with ui.grid(columns="1fr 1fr").classes("w-full"):
                 for index in range(len(char.inventory)):
-                    ui.input(placeholder="" if char.inventory[index] else "[New Item]", **binding(char.inventory, index))
+                    uix.input(placeholder="" if char.inventory[index] else "[New Item]", **binding(char.inventory, index))
 
 
 def _confirm_dialog(label: str, verb: str):
