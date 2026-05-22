@@ -114,6 +114,61 @@ def _panel_inventory(panel: ui.tab, char: Char):
                     uix.input(placeholder="" if char.inventory[index] else "[New Item]", **binding(char.inventory, index))
 
 
+def _panel_check(panel: ui.tab, char: Char):
+        skillvalue = 100
+        with ui.tab_panel(panel).classes("w-full"):
+            ui.label("Check").classes("text-xl")
+
+            with ui.grid(columns="2fr 1fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
+                ui.label("level")
+                ui.label("mw")
+                ui.label("fail")
+                ui.label("miss")
+                ui.label("hit")
+                ui.label("crit")
+                ui.label("crush")
+
+                ui.label("lol")
+                ui.label(f"0 - {skillvalue // 3}")
+                ui.label("1")
+                ui.label("2")
+                ui.label("3")
+                ui.label("5")
+                ui.label("10")
+
+                ui.label("easy")
+                ui.label(f"{skillvalue // 3 + 1} - {2 * skillvalue // 3}")
+                ui.label("1")
+                ui.label("3")
+                ui.label("6")
+                ui.label("10")
+                ui.label("15")
+
+                ui.label("medium")
+                ui.label(f"{2 * skillvalue // 3 + 1} - {4 * skillvalue // 3}")
+                ui.label("1")
+                ui.label("4")
+                ui.label("9")
+                ui.label("14")
+                ui.label("18")
+
+                ui.label("hard")
+                ui.label(f"{4 * skillvalue // 3 + 1} - {2 * skillvalue}")
+                ui.label("1")
+                ui.label("5")
+                ui.label("12")
+                ui.label("18")
+                ui.label("20")
+
+                ui.label("epic")
+                ui.label(f"{2 * skillvalue + 1} - ...")
+                ui.label("1")
+                ui.label("6")
+                ui.label("16")
+                ui.label("19")
+                ui.label("20")
+
+
 def _confirm_dialog(label: str, verb: str):
     with ui.dialog() as dialog, ui.card():
         ui.label(label)
@@ -159,12 +214,14 @@ async def render(char: Char):
         "Attributes & State",
         "Skills & Spells",
         "Inventory",
+        "Check",
     ])
     #anchor = int(ui.run_javascript('return window.location.hash.substring(1);', ) or "0")
     with ui.tab_panels(tabs).classes("w-full"):
         _panel_attributes(panels[0], char, attributes)
         _panel_skills(panels[1], char, attributes)
         _panel_inventory(panels[2], char)
+        _panel_check(panels[3], char)
 
     hash_value = int(await ui.run_javascript('return window.location.hash.substring(1);') or "0")
     tabs.value = panels[hash_value]
