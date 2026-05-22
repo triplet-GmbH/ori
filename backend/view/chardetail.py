@@ -115,9 +115,16 @@ def _panel_inventory(panel: ui.tab, char: Char):
 
 
 def _panel_check(panel: ui.tab, char: Char):
-        skillvalue = 100
+        activity = None
         with ui.tab_panel(panel).classes("w-full"):
             ui.label("Check").classes("text-xl")
+            ui.select(dict([("", "")] + char.skills + char.spells), **binding(activity))
+
+            skillvalue = (
+                (getattr(char.attributes, activity.power_attribute, 0) +
+                getattr(char.attributes, activity.control_attribute, 0)) *
+                (activity.level + 1)
+            )
 
             with ui.grid(columns="2fr 1fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
                 ui.label("level")
