@@ -115,16 +115,39 @@ def _panel_inventory(panel: ui.tab, char: Char):
 
 
 def _panel_check(panel: ui.tab, char: Char):
-        activity = None
+
+        activities = {
+            **{x.name: x for x in char.skills},
+            **{x.name: x for x in char.spells},
+        }
+
         with ui.tab_panel(panel).classes("w-full"):
             ui.label("Check").classes("text-xl")
-            ui.select(dict([("", "")] + [(x.name, x.name[:30]) for x in char.skills] + [(x.name, x.name[:30]) for x in char.spells]), **binding(activity))
-
-            skillvalue = (
-                (getattr(char.attributes, activity.power_attribute, 0) +
-                getattr(char.attributes, activity.control_attribute, 0)) *
-                (activity.level + 1)
+            s = ui.select(
+                dict(
+                    [("", "")] +
+                    [(x, x[:30]) for x in activities]
+                ),
             )
+
+            def create(lb, ub):
+                def calculate(skillname: str):
+                    if a := activities.get(skillname):
+                        skillvalue = (
+                            (getattr(char.attributes, a.power_attribute, 0) +
+                            getattr(char.attributes, a.control_attribute, 0)) *
+                            (a.level + 1)
+                        )
+
+                        left = int(skillvalue // lb + 1) if lb != 0 else 0
+                        right = int(skillvalue // ub) if ub != 0 else "∞"
+
+                        return f"{left} - {right}"
+                    else:
+                        return ""
+                return calculate
+
+            skillvalue = 123
 
             with ui.grid(columns="2fr 1fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
                 ui.label("level")
@@ -136,7 +159,9 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("crush")
 
                 ui.label("lol")
-                ui.label(f"0 - {skillvalue // 3}")
+                #ui.label(f"0 - {skillvalue // 3}")
+                ui.label("").bind_text_from(s, 'value', backward=create(0, 3))
+
                 ui.label("1")
                 ui.label("2")
                 ui.label("3")
@@ -144,7 +169,7 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("10")
 
                 ui.label("easy")
-                ui.label(f"{skillvalue // 3 + 1} - {2 * skillvalue // 3}")
+                ui.label("").bind_text_from(s, 'value', backward=create(3, 3 / 2))
                 ui.label("1")
                 ui.label("3")
                 ui.label("6")
@@ -152,7 +177,7 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("15")
 
                 ui.label("medium")
-                ui.label(f"{2 * skillvalue // 3 + 1} - {4 * skillvalue // 3}")
+                ui.label("").bind_text_from(s, 'value', backward=create(3 / 2, 3 / 4))
                 ui.label("1")
                 ui.label("4")
                 ui.label("9")
@@ -160,7 +185,7 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("18")
 
                 ui.label("hard")
-                ui.label(f"{4 * skillvalue // 3 + 1} - {2 * skillvalue}")
+                ui.label("").bind_text_from(s, 'value', backward=create(3 / 4, 1 / 2))
                 ui.label("1")
                 ui.label("5")
                 ui.label("12")
@@ -168,10 +193,10 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("20")
 
                 ui.label("epic")
-                ui.label(f"{2 * skillvalue + 1} - ...")
+                ui.label("").bind_text_from(s, 'value', backward=create(1 / 2, 0))
                 ui.label("1")
                 ui.label("6")
-                ui.label("16")
+                ui.label("15")
                 ui.label("19")
                 ui.label("20")
 
