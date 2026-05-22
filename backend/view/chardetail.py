@@ -118,7 +118,7 @@ def _panel_check(panel: ui.tab, char: Char):
         activity = None
         with ui.tab_panel(panel).classes("w-full"):
             ui.label("Check").classes("text-xl")
-            ui.select(dict([("", "")] + char.skills + char.spells), **binding(activity))
+            ui.select(dict([("", "")] + [(x.name, x.name[:30]) for x in char.skills] + [(x.name, x.name[:30]) for x in char.spells]), **binding(activity))
 
             skillvalue = (
                 (getattr(char.attributes, activity.power_attribute, 0) +
