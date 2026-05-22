@@ -85,14 +85,18 @@ def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
         ]:
             ui.label(label).classes("text-xl")
             with ui.row().classes("w-full mb-6"):
-                with ui.grid(columns="6fr 1fr 1fr 1fr 1fr 1fr").classes("w-full"):
+                with ui.grid(columns="6fr 1fr 1fr 1fr 1fr").classes("w-full"):
                     for activity in getattr(char, name):
                         ui.input(placeholder="" if activity.name else "[New Skill]", **binding(activity, "name"))
                         ui.select(dict([("", "")] + attributes), **binding(activity, "power_attribute"))
                         ui.select(dict([("", "")] + attributes), **binding(activity, "control_attribute"))
-                        ui.label(f"{getattr(char.attributes, activity.power_attribute, 0)}").classes("self-center")
-                        ui.label(f"{getattr(char.attributes, activity.control_attribute, 0)}").classes("self-center")
                         ui.input(**binding(activity, "level"))
+                        skillvalue = (
+                            (getattr(char.attributes, activity.power_attribute, 0) +
+                            getattr(char.attributes, activity.control_attribute, 0)) *
+                            activity.level
+                        )
+                        ui.label(skillvalue).classes("self-center")
 
 
 def _panel_inventory(panel: ui.tab, char: Char):
