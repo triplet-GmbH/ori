@@ -94,7 +94,7 @@ def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
                         skillvalue = (
                             (getattr(char.attributes, activity.power_attribute, 0) +
                             getattr(char.attributes, activity.control_attribute, 0)) *
-                            activity.level
+                            (activity.level + 1)
                         )
                         ui.label(skillvalue).classes("self-center")
 
