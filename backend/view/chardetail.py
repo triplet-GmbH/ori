@@ -86,6 +86,12 @@ def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
             ui.label(label).classes("text-xl")
             with ui.row().classes("w-full mb-6"):
                 with ui.grid(columns="6fr 1fr 1fr 1fr 1fr").classes("w-full"):
+                    ui.label("Name")
+                    ui.label("Att 1")
+                    ui.label("Att 2")
+                    ui.label("Skill")
+                    ui.label("Wert")
+
                     for activity in getattr(char, name):
                         ui.input(placeholder="" if activity.name else "[New Skill]", **binding(activity, "name"))
                         ui.select(dict([("", "")] + attributes), **binding(activity, "power_attribute"))
