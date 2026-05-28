@@ -4,7 +4,7 @@ from nicegui import ui
 
 from ..model.char import Char, Activity
 
-from . import binding
+from . import history_binding
 from . import uix
 
 
@@ -29,11 +29,11 @@ def _common(char: Char):
         ui.label("Common Info").classes("text-xl")
         with ui.grid(columns="auto 1fr").classes("w-full"):
             ui.label("Name:").classes("self-center font-medium w-full mr-3")
-            ui.input(**binding(char, "name")).classes("w-full")
+            ui.input(**history_binding(char, ["name"])).classes("w-full")
             ui.label("Class:").classes("self-center font-medium w-full mr-3")
-            ui.input(**binding(char, "classname")).classes("w-full")
+            ui.input(**history_binding(char, ["classname"])).classes("w-full")
             ui.label("Level:").classes("self-center font-medium w-full mr-3")
-            ui.input(**binding(char, "level")).classes("w-full")
+            ui.input(**history_binding(char, ["level"])).classes("w-full")
 
 
 def _tab_panel(panel_names: list[str]):
@@ -56,7 +56,7 @@ def _panel_attributes(panel: ui.tab, char: Char, attributes: tuple[str]):
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for key, value in attributes:
                         ui.label(f"{value}:").classes("self-center font-medium w-full mr-3")
-                        uix.input(**binding(char.attributes, key)).classes("w-full")
+                        uix.input(**history_binding(char, ['attributes', key])).classes("w-full")
 
             with ui.column().classes("flex-1"):
                 for name, label, maxvalue in [
@@ -68,13 +68,13 @@ def _panel_attributes(panel: ui.tab, char: Char, attributes: tuple[str]):
                         ui.label("Maximum:").classes("self-center font-medium w-full mr-3")
                         ui.label(maxvalue).classes("self-center font-medium w-full")
                         ui.label("Current:").classes("self-center font-medium w-full mr-3")
-                        uix.input(**binding(char.current, name)).classes("w-full")
+                        uix.input(**history_binding(char, ['current', name])).classes("w-full")
 
                 ui.label("Buffs / Debuffs").classes("text-xl")
                 with ui.grid(columns="auto 1fr").classes("w-full"):
                     for num in range(1, 5):
                         ui.label(f"{num}:").classes("self-center font-medium w-full mr-3")
-                        uix.input(**binding(char.current, f"buff_{num}")).classes("w-full")
+                        uix.input(**history_binding(char, ['current', f"buff_{num}"])).classes("w-full")
 
 
 def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
@@ -92,11 +92,12 @@ def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
                     ui.label("Skill")
                     ui.label("Wert")
 
-                    for activity in getattr(char, name):
-                        ui.input(placeholder="" if activity.name else "[New Skill]", **binding(activity, "name"))
-                        ui.select(dict([("", "")] + attributes), **binding(activity, "power_attribute"))
-                        ui.select(dict([("", "")] + attributes), **binding(activity, "control_attribute"))
-                        ui.input(**binding(activity, "level"))
+                    for index, activity in enumerate(getattr(char, name)):
+                        ui.input(placeholder="" if activity.name else "[New Skill]", **history_binding(char, [name, index, "name"]))
+
+                        ui.select(dict([("", "")] + attributes), **history_binding(char, [name, index, "power_attribute"]))
+                        ui.select(dict([("", "")] + attributes), **history_binding(char, [name, index, "control_attribute"]))
+                        ui.input(**history_binding(char, [name, index, "level"]))
                         skillvalue = (
                             (getattr(char.attributes, activity.power_attribute, 0) +
                             getattr(char.attributes, activity.control_attribute, 0)) *
@@ -106,12 +107,12 @@ def _panel_skills(panel: ui.tab, char: Char, attributes: tuple[str]):
 
 
 def _panel_inventory(panel: ui.tab, char: Char):
-        with ui.tab_panel(panel).classes("w-full"):
-            ui.label("Inventory").classes("text-xl")
+    with ui.tab_panel(panel).classes("w-full"):
+        ui.label("Inventory").classes("text-xl")
 
-            with ui.grid(columns="1fr 1fr").classes("w-full"):
-                for index in range(len(char.inventory)):
-                    uix.input(placeholder="" if char.inventory[index] else "[New Item]", **binding(char.inventory, index))
+        with ui.grid(columns="1fr 1fr").classes("w-full"):
+            for index in range(len(char.inventory)):
+                uix.input(placeholder="" if char.inventory[index] else "[New Item]", **history_binding(char, ['inventory', index]))
 
 
 def _panel_check(panel: ui.tab, char: Char):
@@ -201,6 +202,26 @@ def _panel_check(panel: ui.tab, char: Char):
                 ui.label("20")
 
 
+
+def _panel_history(panel: ui.tab, char: Char):
+    with ui.tab_panel(panel).classes("w-full"):
+        with ui.grid(columns="1fr 1fr 1fr 1fr 1fr").classes("w-full"):
+            ui.label("User")
+            ui.label("Time")
+            ui.label("What")
+            ui.label("From")
+            ui.label("To")
+
+            for item in char.changes:
+                ui.label(item.username)
+                ui.label(item.datetime.strftime("%Y-%m-%d %H:%M:%S"))
+                ui.label('.'.join(str(fragment) for fragment in item.path))
+                ui.label(str(item.from_value))
+                ui.label(str(item.to_value))
+
+
+
+
 def _confirm_dialog(label: str, verb: str):
     with ui.dialog() as dialog, ui.card():
         ui.label(label)
@@ -247,6 +268,7 @@ async def render(char: Char):
         "Skills & Spells",
         "Inventory",
         "Check",
+        "History"
     ])
     #anchor = int(ui.run_javascript('return window.location.hash.substring(1);', ) or "0")
     with ui.tab_panels(tabs).classes("w-full"):
@@ -254,6 +276,7 @@ async def render(char: Char):
         _panel_skills(panels[1], char, attributes)
         _panel_inventory(panels[2], char)
         _panel_check(panels[3], char)
+        _panel_history(panels[4], char)
 
     hash_value = int(await ui.run_javascript('return window.location.hash.substring(1);') or "0")
     tabs.value = panels[hash_value]

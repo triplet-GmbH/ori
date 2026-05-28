@@ -1,9 +1,42 @@
+from datetime import datetime, timedelta
 from random import choice, randint
-from typing import Optional
+from typing import Optional, Any, Self
 
 from pydantic import BaseModel, Field
 
 from . import CurrentDB, PyObjectId
+
+
+type AttPath = list[str | int]
+
+
+class Change(BaseModel):
+    username: str
+    path: AttPath
+    datetime: datetime
+    from_value: Any
+    to_value: Any
+
+    def fold(self, before: Self | None) -> list[Self]:
+        if before is None:
+            return [self]
+
+        if (self.username == before.username
+            and self.path == before.path
+            and self.datetime - before.datetime < timedelta(seconds=10)):
+
+            return [
+                Change(
+                    username=self.username,
+                    path=self.path,
+                    datetime=self.datetime,
+                    from_value=before.from_value,
+                    to_value=self.to_value,
+                )
+            ]
+
+
+        return [before, self]
 
 
 class Attributes(BaseModel):
@@ -48,6 +81,8 @@ class Char(BaseModel):
     spells: list[Activity] = []
     inventory: list[str] = []
 
+    changes: list[Change] = []
+
     deleted: bool = False
 
     model_config = {
@@ -84,11 +119,10 @@ class Char(BaseModel):
         )
         return Char.fetch_by_id(result.inserted_id)
 
-
     @classmethod
     def update(cls, char: "Char") -> bool:
         char = Char(**{
-            **char.dict(),
+            **char.model_dump(),
             "skills": [x for x in char.skills if x.name != ""],
             "spells": [x for x in char.spells if x.name != ""],
             "inventory": [x for x in char.inventory if x != ""],

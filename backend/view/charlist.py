@@ -1,4 +1,3 @@
-from tkinter.font import names
 from nicegui import ui
 
 from .header import render as header
